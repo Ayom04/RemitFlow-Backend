@@ -84,8 +84,10 @@ describe('Cache-Control Integration Tests', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({})
     });
-    // This will fail validation (status 400), but must still have no-store headers.
-    assert.equal(res.status, 400);
+    // Auth middleware runs before validation, so an unauthenticated request returns 401.
+    // The key invariant tested here is that no-store headers are applied regardless of which
+    // error type is returned (auth, validation, etc.).
+    assert.equal(res.status, 401);
     assert.equal(res.headers.get('cache-control'), 'no-store, no-cache, must-revalidate, proxy-revalidate');
     assert.equal(res.headers.get('pragma'), 'no-cache');
     assert.equal(res.headers.get('expires'), '0');
