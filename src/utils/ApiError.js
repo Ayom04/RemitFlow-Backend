@@ -38,6 +38,16 @@ class ApiError extends Error {
     return new ApiError(422, message, details);
   }
 
+  /** Convenience factory for 401 Unauthorized. */
+  static unauthorized(message, details) {
+    return new ApiError(401, message, details);
+  }
+
+  /** Convenience factory for 403 Forbidden. */
+  static forbidden(message, details) {
+    return new ApiError(403, message, details);
+  }
+
   /** Convenience factory for 429 Too Many Requests. */
   static tooManyRequests(message, details) {
     return new ApiError(429, message, details);

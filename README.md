@@ -45,6 +45,58 @@ The application is configured using environment variables (typically defined in 
 | `DB_POOL_CONNECTION_TIMEOUT_MS` | Time to wait for a connection before timing out (ms) | `2000` |
 | `CACHE_DEFAULT_POLICY` | Default cache policy for endpoints (`no-store`, `public`, `private`) | `no-store` |
 | `CACHE_RATES_MAX_AGE_SECONDS` | Cache duration for rates endpoints (seconds) | `10` |
+| `API_TOKENS` | JSON object mapping API tokens to their allowed scopes (see [Authentication](#authentication)) | *(demo tokens)* |
+
+
+## Authentication
+
+All write endpoints and most read endpoints require a valid **Bearer token** in
+the `Authorization` header:
+
+```
+Authorization: Bearer <token>
+```
+
+### Scopes
+
+| Scope | Grants access to |
+|-------|-----------------|
+| `transfers:read` | `GET /api/transfers`, `GET /api/transfers/stats`, `GET /api/transfers/:id` |
+| `transfers:write` | `POST /api/transfers`, `POST /api/transfers/:id/claim`, `POST /api/transfers/:id/cancel`, `POST /api/transfers/:id/archive`, `POST /api/transfers/:id/unarchive` |
+| `users:read` | `GET /api/users`, `GET /api/users/:id` |
+| `users:write` | `POST /api/users` |
+| `audit:read` | `GET /api/audit` |
+
+### Public endpoints (no token required)
+
+`GET /api/health`, `GET /api/health/live`, `GET /api/health/ready`,
+`GET /api/version`, `GET /api/rates`, `GET /api/rates/:pair`, `GET /api/quote`
+
+### Configuring tokens
+
+Set the `API_TOKENS` environment variable to a JSON object mapping token
+strings to their scope arrays:
+
+```bash
+API_TOKENS='{"my-production-token":["transfers:read","transfers:write","users:read","users:write","audit:read"],"reporting-token":["transfers:read","audit:read"]}'
+```
+
+If `API_TOKENS` is not set, the server starts with three **demo tokens** (safe
+for local development only — rotate before deploying):
+
+| Demo token | Scopes |
+|------------|--------|
+| `test-token-admin` | all scopes |
+| `test-token-readonly` | `transfers:read`, `users:read`, `audit:read` |
+| `test-token-transfers` | `transfers:read`, `transfers:write` |
+
+### Error responses
+
+| Status | Meaning |
+|--------|---------|
+| `401 Unauthorized` | `Authorization` header is missing, malformed, or the token is not recognised |
+| `403 Forbidden` | Token is valid but lacks the required scope for this endpoint |
+
 
 
 ## Project layout
@@ -142,25 +194,40 @@ via `?archived=true`. Use `/api/transfers/:id/archive` to archive and
 ## Examples
 
 ```bash
-# Get a quote for sending 100 USD to INR
+# Public endpoints — no token required
 curl "http://localhost:3000/api/quote?amount=100&from=USD&to=INR"
+curl "http://localhost:3000/api/rates"
+curl "http://localhost:3000/api/health"
 
-# Create a transfer
+# Set your token once (use a demo token for local dev, or your own via API_TOKENS)
+TOKEN="test-token-admin"
+
+# Create a transfer  (requires transfers:write)
 curl -X POST http://localhost:3000/api/transfers \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"senderName":"Alice","recipientName":"Bob","amount":100,"from":"USD","to":"INR"}'
 
-# Claim a transfer
-curl -X POST http://localhost:3000/api/transfers/<id>/claim
+# Claim a transfer  (requires transfers:write)
+curl -X POST http://localhost:3000/api/transfers/<id>/claim \
+  -H "Authorization: Bearer $TOKEN"
 
-# Search transfers by name and view aggregate stats
-curl "http://localhost:3000/api/transfers?q=alice"
-curl "http://localhost:3000/api/transfers/stats"
+# Search transfers by name and view aggregate stats  (requires transfers:read)
+curl -H "Authorization: Bearer $TOKEN" "http://localhost:3000/api/transfers?q=alice"
+curl -H "Authorization: Bearer $TOKEN" "http://localhost:3000/api/transfers/stats"
 
-# Archive and unarchive transfers
-curl -X POST http://localhost:3000/api/transfers/<id>/archive
-curl -X POST http://localhost:3000/api/transfers/<id>/unarchive
+# Archive and unarchive transfers  (requires transfers:write)
+curl -X POST http://localhost:3000/api/transfers/<id>/archive \
+  -H "Authorization: Bearer $TOKEN"
+curl -X POST http://localhost:3000/api/transfers/<id>/unarchive \
+  -H "Authorization: Bearer $TOKEN"
 
-# List only archived transfers
-curl "http://localhost:3000/api/transfers?archived=true"
+# List only archived transfers  (requires transfers:read)
+curl -H "Authorization: Bearer $TOKEN" "http://localhost:3000/api/transfers?archived=true"
+
+# List users  (requires users:read)
+curl -H "Authorization: Bearer $TOKEN" "http://localhost:3000/api/users"
+
+# View audit log  (requires audit:read)
+curl -H "Authorization: Bearer $TOKEN" "http://localhost:3000/api/audit"
 ```

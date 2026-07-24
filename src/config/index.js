@@ -58,6 +58,22 @@ const config = {
     defaultPolicy: process.env.CACHE_DEFAULT_POLICY || 'no-store',
     ratesMaxAge: parseInt(process.env.CACHE_RATES_MAX_AGE_SECONDS, 10) || 10,
   },
+
+  apiTokens: (() => {
+    try {
+      if (process.env.API_TOKENS) {
+        return JSON.parse(process.env.API_TOKENS);
+      }
+    } catch (err) {
+      console.warn('Failed to parse API_TOKENS env var, falling back to defaults');
+    }
+    // Default tokens for demo purposes
+    return {
+      'test-token-admin': ['transfers:read', 'transfers:write', 'users:read', 'users:write', 'audit:read'],
+      'test-token-readonly': ['transfers:read', 'users:read', 'audit:read'],
+      'test-token-transfers': ['transfers:read', 'transfers:write']
+    };
+  })(),
 };
 
 module.exports = config;
