@@ -19,6 +19,51 @@ test('isPositiveAmount accepts positive numbers only', () => {
   assert.equal(money.isPositiveAmount('abc'), false);
 });
 
+test('isSafeAmount accepts finite numbers within the safe magnitude', () => {
+  assert.equal(money.isSafeAmount(5), true);
+  assert.equal(money.isSafeAmount('1250.50'), true);
+  assert.equal(money.isSafeAmount(0), true);
+  assert.equal(money.isSafeAmount(-100), true);
+});
+
+test('isSafeAmount rejects non-finite and out-of-range values', () => {
+  assert.equal(money.isSafeAmount(Infinity), false);
+  assert.equal(money.isSafeAmount(-Infinity), false);
+  assert.equal(money.isSafeAmount(NaN), false);
+  assert.equal(money.isSafeAmount('abc'), false);
+  assert.equal(money.isSafeAmount(Number.MAX_SAFE_INTEGER), false);
+  assert.equal(money.isSafeAmount(1e21), false);
+});
+
+test('hasValidPrecision accepts amounts with up to two decimal places', () => {
+  assert.equal(money.hasValidPrecision(10), true);
+  assert.equal(money.hasValidPrecision(10.1), true);
+  assert.equal(money.hasValidPrecision(10.12), true);
+  assert.equal(money.hasValidPrecision('10.12'), true);
+  assert.equal(money.hasValidPrecision('0.01'), true);
+});
+
+test('hasValidPrecision rejects amounts with sub-cent precision', () => {
+  assert.equal(money.hasValidPrecision(10.129), false);
+  assert.equal(money.hasValidPrecision('10.123'), false);
+  assert.equal(money.hasValidPrecision('0.001'), false);
+});
+
+test('hasValidPrecision rejects non-numeric and exponential-notation input', () => {
+  assert.equal(money.hasValidPrecision('abc'), false);
+  assert.equal(money.hasValidPrecision('1e5'), false);
+  assert.equal(money.hasValidPrecision(NaN), false);
+  assert.equal(money.hasValidPrecision(undefined), false);
+  assert.equal(money.hasValidPrecision(null), false);
+});
+
+test('hasValidPrecision honors a custom decimals argument', () => {
+  assert.equal(money.hasValidPrecision(10.123, 3), true);
+  assert.equal(money.hasValidPrecision(10.1234, 3), false);
+  assert.equal(money.hasValidPrecision(10, 0), true);
+  assert.equal(money.hasValidPrecision(10.5, 0), false);
+});
+
 test('clamp constrains values to the given range', () => {
   assert.equal(money.clamp(5, 0, 10), 5);
   assert.equal(money.clamp(-3, 0, 10), 0);

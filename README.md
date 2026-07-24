@@ -97,6 +97,12 @@ The API implements Cache-Control response headers for security and efficiency:
 - `GET /api/rates/:pair` — rate for one pair, e.g. `/api/rates/USD-INR`.
 - `GET /api/quote?amount=&from=&to=` — FX quote with fee breakdown.
 
+All `amount` fields (quotes and transfers) are guarded for numeric
+precision: values must be finite, within a safe numeric range, and have
+at most 2 decimal places (e.g. `100.129` is rejected with a 400). This
+prevents floating-point/sub-cent precision loss from being silently
+rounded away.
+
 ### Transfers
 
 - `POST /api/transfers` — create a transfer.

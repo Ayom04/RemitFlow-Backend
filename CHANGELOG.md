@@ -34,6 +34,11 @@ When preparing a new release:
 - Configurable maximum transfer amount with validation.
 - `percentage` helper on the money util and a `strings` utility module, both
   covered by `node:test` suites.
+- Numeric precision guards on money fields: `money.isSafeAmount` and
+  `money.hasValidPrecision` reject non-finite/out-of-range amounts and
+  amounts with more than 2 decimal places (sub-cent precision) on both
+  `GET /api/quote` and `POST /api/transfers`, instead of silently rounding
+  them away.
 - `unprocessable` (422) and `serviceUnavailable` (503) `ApiError` factories.
 - Structured key-value fields in request logs.
 - Expanded demo seed data with additional users and transfers.

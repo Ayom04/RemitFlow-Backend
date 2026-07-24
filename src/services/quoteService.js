@@ -34,6 +34,14 @@ function getQuote(amount, from, to) {
   if (!money.isPositiveAmount(amount)) {
     throw ApiError.badRequest('amount must be a positive number');
   }
+  if (!money.isSafeAmount(amount)) {
+    throw ApiError.badRequest('amount is outside the supported numeric range');
+  }
+  if (!money.hasValidPrecision(amount)) {
+    throw ApiError.badRequest(
+      `amount must have at most ${money.DECIMALS} decimal places`
+    );
+  }
 
   const fromCode = currency.normalize(from);
   const toCode = currency.normalize(to);

@@ -15,6 +15,10 @@ function validateQuoteQuery(req) {
     errors.push('amount is required');
   } else if (!money.isPositiveAmount(amount)) {
     errors.push('amount must be a positive number');
+  } else if (!money.isSafeAmount(amount)) {
+    errors.push('amount is outside the supported numeric range');
+  } else if (!money.hasValidPrecision(amount)) {
+    errors.push(`amount must have at most ${money.DECIMALS} decimal places`);
   }
 
   if (!from) {
