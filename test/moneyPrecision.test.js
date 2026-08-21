@@ -64,7 +64,10 @@ test('GET /api/quote accepts a well-formed two-decimal amount', async () => {
 test('POST /api/transfers rejects an amount with sub-cent precision', async () => {
   const { status, body } = await fetchJson('/api/transfers', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      Authorization: 'Bearer test-token-admin',
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify({
       senderName: 'Alice',
       recipientName: 'Bob',
@@ -82,7 +85,10 @@ test('POST /api/transfers rejects an amount with sub-cent precision', async () =
 test('POST /api/transfers accepts a well-formed two-decimal amount', async () => {
   const { status, body } = await fetchJson('/api/transfers', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      Authorization: 'Bearer test-token-admin',
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify({
       senderName: 'Alice',
       recipientName: 'Bob',

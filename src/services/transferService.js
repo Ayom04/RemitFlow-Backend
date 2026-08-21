@@ -8,6 +8,14 @@ const quoteService = require('./quoteService');
 const stellarService = require('./stellarService');
 const auditService = require('./auditService');
 
+// Keep lifecycle timestamps strictly increasing even when multiple operations
+// happen within the same millisecond (common in tests and API batches).
+function nextTimestamp(previous) {
+  const now = Date.now();
+  const previousMs = previous ? Date.parse(previous) : NaN;
+  return new Date(Math.max(now, Number.isFinite(previousMs) ? previousMs + 1 : now)).toISOString();
+}
+
 /**
  * Transfer lifecycle management.
  * A transfer is created in the PENDING state and can either be
@@ -122,9 +130,10 @@ function createTransfer(data, requestId) {
     status: TRANSFER_STATUS.PENDING,
     stellar: settlement,
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    updatedAt: null,
     archivedAt: null,
   };
+  transfer.updatedAt = nextTimestamp(transfer.createdAt);
 
   store.transfers.set(transfer.id, transfer);
 
@@ -158,7 +167,7 @@ function transition(transfer, nextStatus) {
     );
   }
   transfer.status = nextStatus;
-  transfer.updatedAt = new Date().toISOString();
+  transfer.updatedAt = nextTimestamp(transfer.updatedAt);
   return transfer;
 }
 
@@ -213,8 +222,9 @@ function cancelTransfer(id, requestId) {
 function archiveTransfer(id) {
   const transfer = getTransferOrThrow(id);
   if (!transfer.archivedAt) {
-    transfer.archivedAt = new Date().toISOString();
-    transfer.updatedAt = new Date().toISOString();
+    const timestamp = nextTimestamp(transfer.updatedAt);
+    transfer.archivedAt = timestamp;
+    transfer.updatedAt = timestamp;
   }
   return transfer;
 }
@@ -230,7 +240,7 @@ function unarchiveTransfer(id) {
     throw ApiError.conflict(`Transfer is not archived: ${id}`);
   }
   transfer.archivedAt = null;
-  transfer.updatedAt = new Date().toISOString();
+  transfer.updatedAt = nextTimestamp(transfer.updatedAt);
   return transfer;
 }
 
