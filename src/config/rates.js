@@ -11,6 +11,7 @@ const RATES_TO_USD = {
   GBP: 1.27,
   INR: 0.012,
   NGN: 0.00065,
+  JPY: 0.0067,
   PHP: 0.017,
   MXN: 0.058,
   KES: 0.0078,
