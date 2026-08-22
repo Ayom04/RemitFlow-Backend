@@ -1,6 +1,7 @@
 'use strict';
 
 const auditService = require('../services/auditService');
+const { OrderedIndex } = require('../utils/orderedIndex');
 
 /**
  * Simple in-memory data store.
@@ -10,12 +11,22 @@ const auditService = require('../services/auditService');
 const store = {
   users: new Map(),
   transfers: new Map(),
+
+  /**
+   * Append-only creation-order index over `transfers`, maintained alongside the
+   * map by transferService. It gives transfer history a stable total order and
+   * O(1) seeks, which a Map cannot provide. Transfers are never deleted - the
+   * lifecycle only mutates status and archive flags - so appended entries stay
+   * valid for the life of the process.
+   */
+  transferIndex: new OrderedIndex({ sortKeyOf: (transfer) => transfer.createdAt }),
 };
 
 /** Remove all records from the store. Primarily used in tests/seeding. */
 function reset() {
   store.users.clear();
   store.transfers.clear();
+  store.transferIndex.reset();
   auditService.reset();
 }
 
