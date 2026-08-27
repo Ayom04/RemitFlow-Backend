@@ -11,7 +11,6 @@ const { OrderedIndex } = require('../utils/orderedIndex');
 const store = {
   users: new Map(),
   transfers: new Map(),
-
   /**
    * Append-only creation-order index over `transfers`, maintained alongside the
    * map by transferService. It gives transfer history a stable total order and
@@ -20,6 +19,10 @@ const store = {
    * valid for the life of the process.
    */
   transferIndex: new OrderedIndex({ sortKeyOf: (transfer) => transfer.createdAt }),
+  // Keyed by "<actor> <idempotency-key>". Lives here rather than in a module
+  // local so it shares the transfers' lifetime: a replay can never outlive the
+  // transfer it would replay.
+  idempotency: new Map(),
 };
 
 /** Remove all records from the store. Primarily used in tests/seeding. */
@@ -27,6 +30,7 @@ function reset() {
   store.users.clear();
   store.transfers.clear();
   store.transferIndex.reset();
+  store.idempotency.clear();
   auditService.reset();
 }
 
